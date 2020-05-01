@@ -1,0 +1,22 @@
+PODS:
+  - Flutter (1.0.0)
+  - infineasdk (0.0.1):
+    - Flutter
+
+DEPENDENCIES:
+  - Flutter (from `Flutter`)
+  - infineasdk (from `.symlinks/plugins/infineasdk/ios`)
+
+EXTERNAL SOURCES:
+  Flutter:
+    :path: Flutter
+  infineasdk:
+    :path: ".symlinks/plugins/infineasdk/ios"
+
+SPEC CHECKSUMS:
+  Flutter: 0e3d915762c693b495b44d77113d4970485de6ec
+  infineasdk: cee22cfd65abae2dc5c30c98b9b045fd35c5efc7
+
+PODFILE CHECKSUM: 3dbe063e9c90a5d7c9e4e76e70a821b9e2c1d271
+
+COCOAPODS: 1.8.3
