@@ -1,7 +1,6 @@
 name: infineasdk
 description: A new Flutter plugin for using infinea sdk
-version: 0.0.1
-author: Ahmed Soliman <ahmed-f96@hotmail.com>
+version: 0.0.3
 homepage: https://github.com/Ahmedesayed/infineasdk.git
 
 environment:

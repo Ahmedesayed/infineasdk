@@ -1,6 +1,6 @@
 #import <Flutter/Flutter.h>
-#import <InfineaSDK/InfineaSDK.h>
 #import "constants.h"
+#import <InfineaSDK/InfineaSDK.h>
 
 @interface InfineasdkPlugin : NSObject<FlutterPlugin , IPCDTDeviceDelegate>
 
@@ -8,11 +8,11 @@
 @property (strong, nonatomic) IPCDTDevices *ipc;
 
 // Available Functions
-- (void)setDeveloperKey;
-- (void)connect;
+- (void)setDeveloperKey:(FlutterResult)result arguments:(NSMutableArray *)arguments;
+- (void)connect:(FlutterResult)result;
 - (void)disconnect:(FlutterResult)result;
 - (void)sdkVersion:(FlutterResult)result;
-- (void)getConnectedDeviceInfo:(FlutterResult)result;
+- (void)getConnectedDeviceInfo:(FlutterResult)result arguments:(NSMutableArray *)arguments;;
 - (void)getConnectedDevicesInfo:(FlutterResult)result;
 - (void)setPassThroughSync:(FlutterResult)result arguments:(NSMutableArray *)arguments;
 - (void)getPassThroughSync:(FlutterResult)result;

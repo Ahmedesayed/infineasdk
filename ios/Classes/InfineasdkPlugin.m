@@ -10,16 +10,20 @@ FlutterMethodChannel* channel;
             binaryMessenger:[registrar messenger]];
   InfineasdkPlugin* instance = [[InfineasdkPlugin alloc] init];
   [registrar addMethodCallDelegate:instance channel:channel];
-  [self setDeveloperKey];
-  [self connect];
 }
 
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
   if([@"sdkVersion" isEqualToString:call.method]){
     [self sdkVersion:result];
   }
+  else if([@"setDeveloperKey" isEqualToString:call.method]){
+    [self setDeveloperKey:result arguments:call.arguments];
+  }
+  else if([@"connect" isEqualToString:call.method]){
+    [self connect:result];
+  }
   else if([@"getConnectedDeviceInfo" isEqualToString:call.method]){
-    [self getConnectedDeviceInfo:result];
+    [self getConnectedDeviceInfo:result arguments:call.arguments];
   }
   else if([@"getConnectedDevicesInfo" isEqualToString:call.method]){
     [self getConnectedDevicesInfo:result];
@@ -82,13 +86,13 @@ FlutterMethodChannel* channel;
     [self emsrIsTampered:result];
   }
   else if([@"emsrGetKeyVersion" isEqualToString:call.method]){
-    [self emsrGetKeyVersion:result];
+    [self emsrGetKeyVersion:result arguments:call.arguments];
   }
   else if([@"emsrGetDeviceInfo" isEqualToString:call.method]){
     [self emsrGetDeviceInfo:result];
   }
   else if([@"updateFirmwareData" isEqualToString:call.method]){
-    [self updateFirmwareData:result arguments:call.arguments];
+    [self updateFirmwareData:result];
   }
   else if([@"emsrSetEncryption" isEqualToString:call.method]){
     [self emsrSetEncryption:result arguments:call.arguments];
@@ -520,18 +524,21 @@ FlutterMethodChannel* channel;
 
 }
 
-- (void)setDeveloperKey
+- (void)setDeveloperKey:(FlutterResult)result arguments:(NSMutableArray*)arguments
 {
 
     NSLog(@"Call setDeveloperKey");
     NSError *error;
+    NSString *key = arguments[0];
+
     self.iq = [IPCIQ registerIPCIQ];
-    [self.iq setDeveloperKey:ipcDevKey withError:&error];
+    [self.iq setDeveloperKey:key withError:&error];
     if (error) {
         NSLog(@"Developer Key Error: %@", error.localizedDescription);
+        result(error.localizedDescription);
     }
     else{
-        NSLog(@"Developer Key Set");
+        result(@"true");
     }
     self.ipc = [IPCDTDevices sharedDevice];
 }
@@ -542,7 +549,7 @@ FlutterMethodChannel* channel;
     return [pathURL URLByAppendingPathComponent:@"www/resources"];
 }
 
-- (void)getFirmwareFileInformation:(FlutterResult)result arguments:(NSMutableArray*)arguments
+- (void)getFirmwareFileInformation:(FlutterResult)result
 {
     NSLog(@"Call getFirmwareFileInformation");
 
@@ -575,7 +582,7 @@ FlutterMethodChannel* channel;
     }
 }
 
-- (void)updateFirmwareData:(FlutterResult)result arguments:(NSMutableArray*)arguments
+- (void)updateFirmwareData:(FlutterResult)result
 {
     NSLog(@"Call updateFirmwareData");
 
@@ -615,12 +622,13 @@ FlutterMethodChannel* channel;
     }
 }
 
-- (void)connect
+- (void)connect:(FlutterResult)result
 {
     NSLog(@"Call connect");
     self.ipc = [IPCDTDevices sharedDevice];
     [self.ipc addDelegate:self];
-    [self.ipc connect ];
+    [self.ipc connect];
+    result(@"true");
 }
 
 - (void)disconnect:(FlutterResult)result
@@ -628,15 +636,20 @@ FlutterMethodChannel* channel;
     NSLog(@"Call disconnect");
     self.ipc = [IPCDTDevices sharedDevice];
     [self.ipc disconnect];
+    result(@"true");
 }
 
 
 - (void)callback:(NSString *)format, ... NS_FORMAT_FUNCTION(1,2)
 {
+    
+    NSLog(@"%@", format);
     va_list args;
     va_start(args, format);
-    [channel invokeMethod:format arguments:args] // to push data to flutter
+    NSLog(@"%s", args);
     va_end(args);
+    [channel invokeMethod:format arguments:format]; // to push data to flutter
+
 
 }
 
@@ -644,14 +657,22 @@ FlutterMethodChannel* channel;
 #pragma mark - IPCDeviceDelegate
 - (void)connectionState:(int)state
 {
-    [self callback:@"Infinea.connectionState(%i)", state];
+    // [self callback:@"connectionState", state];
+    [channel invokeMethod:@"connectionState" arguments:[NSNumber numberWithInt:((int)state)]];
 }
 
 - (void)barcodeData:(NSString *)barcode type:(int)type
 {
     //*************
+    NSDictionary *o1 = [NSDictionary dictionaryWithObjectsAndKeys:
+barcode, @"barcode",
+type, @"type",
+nil];
+
+
     // This send to regular barcodeData as string
-    [self callback:@"Infinea.barcodeData(\"%@\", %i)", barcode, type];
+    // [self callback:@"barcodeData", barcode, type];
+    [channel invokeMethod:@"barcodeData" arguments:o1]; 
 
 
     //*************
@@ -665,12 +686,19 @@ FlutterMethodChannel* channel;
     }
     NSString *barcodeDecimalString = [barcodeDecimalArray componentsJoinedByString:@","];
 
+o1 = [NSDictionary dictionaryWithObjectsAndKeys:
+barcodeDecimalString, @"barcode",
+type, @"type",
+nil];
+ 
+    [channel invokeMethod:@"barcodeDecimals" arguments:o1]; 
     // Send to barcodeDecimals as decimal array
-    [self callback:@"Infinea.barcodeDecimals([%@], %i)", barcodeDecimalString, type];
+    // [self callback:@"barcodeDecimals", barcodeDecimalString, type];
 }
 
 - (void)barcodeNSData:(NSData *)barcode type:(int)type
 {
+    
     // Hex data
     NSString *hexData = [NSString stringWithFormat:@"%@", barcode];
     hexData = [hexData stringByReplacingOccurrencesOfString:@"<" withString:@""];
@@ -684,8 +712,13 @@ FlutterMethodChannel* channel;
     {
         [escapedString appendFormat:@"\\x%02X", bytes[x] ];
     }
+   NSDictionary *o1 = [NSDictionary dictionaryWithObjectsAndKeys:
+hexData, @"hexData",
+type, @"type",
+nil];
+    [channel invokeMethod:@"barcodeDecimals" arguments:o1]; 
 
-    [self callback:@"Infinea.barcodeNSData(\"%@\", %i)", hexData, type];
+    // [self callback:@"barcodeNSData", hexData, type];
 }
 
 - (void)rfCardDetected:(int)cardIndex info:(DTRFCardInfo *)info
@@ -703,43 +736,80 @@ FlutterMethodChannel* channel;
                                @"felicaRequestData": [NSString stringWithFormat:@"%@", info.felicaRequestData],
                                @"cardIndex": @(info.cardIndex)
                                };
+    [channel invokeMethod:@"rfCardDetected" arguments:cardInfo]; 
 
-    [self callback:@"Infinea.rfCardDetected(%i, %@)", cardIndex, cardInfo];
+    // [self callback:@"rfCardDetected", cardIndex, cardInfo];
 }
 
 - (void)magneticCardData:(NSString *)track1 track2:(NSString *)track2 track3:(NSString *)track3
 {
-    [self callback:@"Infinea.magneticCardData(\"%@\", \"%@\", \"%@\")", track1, track2, track3];
+       NSDictionary *o1 = [NSDictionary dictionaryWithObjectsAndKeys:
+track1, @"track1",
+track2, @"track2",
+track3, @"track3",
+nil];
+    [channel invokeMethod:@"magneticCardData" arguments:o1]; 
+
+    // [self callback:@"magneticCardData", track1, track2, track3];
 }
 
 - (void)magneticCardEncryptedData:(int)encryption tracks:(int)tracks data:(NSData *)data track1masked:(NSString *)track1masked track2masked:(NSString *)track2masked track3:(NSString *)track3 source:(int)source
 {
-    [self callback:@"Infinea.magneticCardEncryptedData(%i, %i, \"%@\", \"%@\", \"%@\", \"%@\", %i)", encryption, tracks, [NSString stringWithFormat:@"%@", data], track1masked, track2masked, track3, source];
+     NSDictionary *o1 = [NSDictionary dictionaryWithObjectsAndKeys:
+[NSNumber numberWithInt:((int)encryption)], @"encryption",
+tracks, @"tracks",
+data, @"data",
+track1masked,@"track1masked",
+track2masked,@"track2masked",
+track3,@"track3",
+source,@"source",
+nil];
+    [channel invokeMethod:@"magneticCardData" arguments:o1]; 
+
+    // [self callback:@"magneticCardEncryptedData", encryption, tracks, [NSString stringWithFormat:@"%@", data], track1masked, track2masked, track3, source];
 }
 
 - (void)magneticCardReadFailed:(int)source reason:(int)reason
 {
-    [self callback:@"Infinea.magneticCardReadFailed(%i, %i)", source, reason];
+     NSDictionary *o1 = [NSDictionary dictionaryWithObjectsAndKeys:
+[NSNumber numberWithInt:((int)source)], @"source",
+reason,@"reason",
+nil];
+    [channel invokeMethod:@"magneticCardReadFailed" arguments:o1]; 
+
+    // [self callback:@"magneticCardReadFailed", source, reason];
 }
 
 - (void)magneticCardReadFailed:(int)source
 {
-    [self callback:@"Infinea.magneticCardReadFailed(%i, %i)", source, -1];
+    [channel invokeMethod:@"magneticCardReadFailed" arguments:[NSNumber numberWithInt:((int)source)]];
+
+    // [self callback:@"magneticCardReadFailed", source, -1];
 }
 
 - (void)deviceButtonPressed:(int)which
 {
-    [self callback:@"Infinea.deviceButtonPressed(%i)", which];
+    [channel invokeMethod:@"deviceButtonPressed" arguments:[NSNumber numberWithInt:((int)which)]];
+
+    // [self callback:@"deviceButtonPressed", which];
 }
 
 - (void)deviceButtonReleased:(int)which
 {
-    [self callback:@"Infinea.deviceButtonReleased(%i)", which];
+    [channel invokeMethod:@"deviceButtonReleased" arguments:[NSNumber numberWithInt:((int)which)]];
+    
+    // [self callback:@"deviceButtonReleased", which];
 }
 
 - (void)firmwareUpdateProgress:(int)phase percent:(int)percent
 {
-    [self callback:@"Infinea.firmwareUpdateProgress(%i, %i)", phase, percent];
+       NSDictionary *o1 = [NSDictionary dictionaryWithObjectsAndKeys:
+[NSNumber numberWithInt:((int)phase)], @"phase",
+percent,@"percent",
+nil];
+    [channel invokeMethod:@"firmwareUpdateProgress" arguments:o1]; 
+
+    // [self callback:@"firmwareUpdateProgress", phase, percent];
 }
 
 

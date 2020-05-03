@@ -1,8 +1,11 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'dart:async';
 
 import 'package:flutter/services.dart';
 import 'package:infineasdk/infineasdk.dart';
+import 'package:infineasdk_example/constants.dart';
 
 void main() => runApp(MyApp());
 
@@ -12,7 +15,7 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  String _platformVersion = 'Unknown';
+  dynamic _platformVersion = 'Unknown';
 
   @override
   void initState() {
@@ -23,16 +26,20 @@ class _MyAppState extends State<MyApp> {
 
   initCallBackHandler(){
     Infineasdk.setMethodCallHandler((MethodCall call){
+        log('method : ${call.method}');
+        log('arguments : ${call.arguments}');
         if(call.method == 'any'); //do any action;
     });
   }
 
   // Platform messages are asynchronous, so we initialize in an async method.
   Future<void> initPlatformState() async {
-    String platformVersion;
+    dynamic platformVersion;
     // Platform messages may fail, so we use a try/catch PlatformException.
     try {
-      platformVersion = await Infineasdk.platformVersion;
+       await Infineasdk.setDeveloperKey(ipcDevKey);
+       await Infineasdk.connect();
+       platformVersion = await Infineasdk.getConnectedDevicesInfo;
     } on PlatformException {
       platformVersion = 'Failed to get platform version.';
     }
@@ -52,7 +59,7 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       home: Scaffold(
         appBar: AppBar(
-          title: const Text('Plugin example app'),
+          title: const Text('InfineaSDK example'),
         ),
         body: Center(
           child: Text('Running on: $_platformVersion\n'),

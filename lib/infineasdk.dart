@@ -23,11 +23,18 @@ class Infineasdk {
   static const MethodChannel _channel =
       const MethodChannel('infineasdk');
 
-  static Future<String> get platformVersion async {
-    final String result = await _channel.invokeMethod('getPlatformVersion');
+  static Future<String> setDeveloperKey(String key) async {
+    final String result = await _channel.invokeMethod('setDeveloperKey',[key]);
     return result;
   }
-
+  static Future<String> connect() async {
+    final String result = await _channel.invokeMethod('connect');
+    return result;
+  }
+  static Future<String> disconnect() async {
+    final String result = await _channel.invokeMethod('disconnect');
+    return result;
+  }
   static Future<String> get sdkVersion async {
     final String result = await _channel.invokeMethod('sdkVersion');
     return result;
@@ -36,8 +43,8 @@ class Infineasdk {
     final String result = await _channel.invokeMethod('getConnectedDeviceInfo');
     return result;
   }
-  static Future<String> get getConnectedDevicesInfo async {
-    final String result = await _channel.invokeMethod('getConnectedDevicesInfo');
+  static Future<List> get getConnectedDevicesInfo async {
+    final result = await _channel.invokeMethod('getConnectedDevicesInfo');
     return result;
   }
   static Future<String> get getPassThroughSync async {
@@ -48,10 +55,7 @@ class Infineasdk {
     final String result = await _channel.invokeMethod('getUSBChargeCurrent');
     return result;
   }
-  static Future<String> get getBatteryInfo async {
-    final String result = await _channel.invokeMethod('getBatteryInfo');
-    return result;
-  }
+
   static Future<String> get rfInit async {
     final String result = await _channel.invokeMethod('rfInit');
     return result;
@@ -139,6 +143,5 @@ class Infineasdk {
   static void setMethodCallHandler(Future<dynamic> handler(MethodCall call)){
      _channel.setMethodCallHandler(handler);
   }
-  
 
 }
