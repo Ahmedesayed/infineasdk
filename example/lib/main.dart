@@ -25,9 +25,8 @@ class _MyAppState extends State<MyApp> {
   }
 
   initCallBackHandler(){
-    Infineasdk.setMethodCallHandler((MethodCall call){
-        log('method : ${call.method}');
-        log('arguments : ${call.arguments}');
+    Infineasdk.onEvents((MethodCall call){
+        log('method ${call.method} , arguments : ${call.arguments}');
         if(call.method == 'any'); //do any action;
     });
   }

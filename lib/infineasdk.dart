@@ -140,7 +140,7 @@ class Infineasdk {
     final String result = await _channel.invokeMethod('emsrConfigMaskedDataShowExpiration',[showExpiration,showServiceCode,unmaskedDigitsAtStart,unmaskedDigitsAtEnd,unmaskedDigitsAfter]);
     return result;
   }
-  static void setMethodCallHandler(Future<dynamic> handler(MethodCall call)){
+  static void onEvents(Future<dynamic> handler(MethodCall call)){  // callback for sdk events
      _channel.setMethodCallHandler(handler);
   }
 
